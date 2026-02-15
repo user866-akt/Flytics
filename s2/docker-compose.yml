@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: pg_course
+    environment:
+      POSTGRES_DB: flytics
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 7777
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init/flytics.sql:/docker-entrypoint-initdb.d/flytics.sql
+
+  flyway:
+    image: flyway/flyway
+    depends_on:
+      - postgres
+    command: migrate
+    volumes:
+      - ./db/migrations:/flyway/sql
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/flytics
+      FLYWAY_USER: postgres
+      FLYWAY_PASSWORD: 7777
+      FLYWAY_BASELINE_ON_MIGRATE: true
+      FLYWAY_BASELINE_VERSION: 1
+      FLYWAY_BASELINE_DESCRIPTION: "Initial baseline"
+      FLYWAY_SCHEMAS: public
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+volumes:
+  pg_data:
+  pgadmin_data:
