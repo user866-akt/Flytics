@@ -350,3 +350,33 @@ $query4 = @"
 Invoke-RestMethod -Uri "http://localhost:9200/books/_search?pretty" -Method Post -Headers $headers -Body $query4
 ```
 ![](images/img106.png)
+
+---
+
+Redis
+
+```yml
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis-homework
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - redis-network
+
+volumes:
+  redis-data:
+
+networks:
+  redis-network:
+    driver: bridge
+```
+![](images/img107.png)
+![](images/img108.png)
+![](images/img109.png)
+![](images/img110.png)
+![](images/img111.png)
