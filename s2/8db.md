@@ -380,3 +380,122 @@ networks:
 ![](images/img109.png)
 ![](images/img110.png)
 ![](images/img111.png)
+
+---
+
+Neo4j
+
+```yml
+version: '3.8'
+services:
+  neo4j:
+    image: neo4j:5-enterprise
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password123
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_PLUGINS='["apoc", "graph-data-science"]'
+    volumes:
+      - ./neo4j/data:/data
+      - ./neo4j/logs:/logs
+      - ./neo4j/import:/var/lib/neo4j/import
+    networks:
+      - neo4j-network
+
+networks:
+  neo4j-network:
+    driver: bridge
+```
+```cypher
+CREATE (alex:User {name: "Alex"}),
+       (maria:User {name: "Maria"}),
+       (john:User {name: "John"})
+RETURN *
+CREATE (inception:Movie {title: "Inception"}),
+       (matrix:Movie {title: "The Matrix"}),
+       (titanic:Movie {title: "Titanic"}),
+       (avatar:Movie {title: "Avatar"})
+RETURN *
+MATCH (a:User {name: "Alex"}), (m:User {name: "Maria"})
+CREATE (a)-[:FRIENDS]->(m)
+
+MATCH (m:User {name: "Maria"}), (j:User {name: "John"})
+CREATE (m)-[:FRIENDS]->(j)
+
+MATCH (a:User {name: "Alex"}), (j:User {name: "John"})
+CREATE (a)-[:FRIENDS]->(j)
+
+RETURN *
+MATCH (a:User {name: "Alex"}), (i:Movie {title: "Inception"})
+CREATE (a)-[:WATCHED {rating: 5}]->(i)
+
+MATCH (m:User {name: "Maria"}), (i:Movie {title: "Inception"})
+CREATE (m)-[:WATCHED {rating: 4}]->(i)
+
+MATCH (m:User {name: "Maria"}), (mx:Movie {title: "The Matrix"})
+CREATE (m)-[:WATCHED {rating: 5}]->(mx)
+
+MATCH (j:User {name: "John"}), (t:Movie {title: "Titanic"})
+CREATE (j)-[:WATCHED {rating: 3}]->(t)
+
+MATCH (j:User {name: "John"}), (mx:Movie {title: "The Matrix"})
+CREATE (j)-[:WATCHED {rating: 4}]->(mx)
+
+RETURN *
+```
+![](images/img112.png)
+![](images/img113.png)
+В PostgreSQL:
+```sql
+CREATE TABLE users (
+    id INT PRIMARY KEY,
+    name VARCHAR(50)
+);
+
+CREATE TABLE movies (
+    id INT PRIMARY KEY,
+    title VARCHAR(100)
+);
+
+CREATE TABLE friends (
+    user_id INT,
+    friend_id INT,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (friend_id) REFERENCES users(id)
+);
+
+CREATE TABLE watched (
+    user_id INT,
+    movie_id INT,
+    rating INT,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (movie_id) REFERENCES movies(id)
+);
+
+INSERT INTO users VALUES (1, 'Alex'), (2, 'Maria'), (3, 'John');
+INSERT INTO movies VALUES (1, 'Inception'), (2, 'The Matrix'), (3, 'Titanic'), (4, 'Avatar');
+INSERT INTO friends VALUES (1, 2), (2, 3), (1, 3);
+INSERT INTO watched VALUES (1, 1, 5), (2, 1, 4), (2, 2, 5), (3, 3, 3), (3, 2, 4);
+
+SELECT u.name AS friend_name
+FROM users u
+JOIN friends f ON u.id = f.friend_id
+JOIN users a ON f.user_id = a.id
+WHERE a.name = 'Alex';
+
+SELECT DISTINCT m.title AS movie_title, u.name AS recommended_by
+FROM users a
+JOIN friends f ON a.id = f.user_id
+JOIN users u ON f.friend_id = u.id
+JOIN watched w ON u.id = w.user_id
+JOIN movies m ON w.movie_id = m.id
+WHERE a.name = 'Alex'
+  AND m.id NOT IN (
+    SELECT movie_id 
+    FROM watched 
+    WHERE user_id = a.id
+  );
+```
