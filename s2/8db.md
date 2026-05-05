@@ -547,7 +547,9 @@ volumes:
 ![](images/img119.png)
 1) Clickhouse быстрее вставил данные (~1сек)
    PostgreSQL ~10сек
+
 2) ClickHouse обычно сжимает данные в 5-10 раз эффективнее PostgreSQL
+
 3, 4) ClickHouse лучше для:
       Аналитических запросов с агрегацией больших объемов данных
       Систем реального времени и логов
@@ -559,3 +561,53 @@ PostgreSQL лучше для:
       Когда нужны частые обновления и удаления записей
       Сложных JOIN-запросов с гарантированной целостностью
       Приложений с ACID-транзакциями
+
+---
+
+Cassandra
+
+```yml
+services:  
+  node1:  
+    image: cassandra:latest  
+    container_name: cassandra-node1  
+    ports:  
+      - "9042:9042"  
+    volumes:  
+      - cassandra_node1_data:/var/lib/cassandra  
+    environment:  
+      - CASSANDRA_CLUSTER_NAME=TestCluster  
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch  
+      - MAX_HEAP_SIZE=256M  
+      - HEAP_NEWSIZE=64M  
+    healthcheck:  
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN'"]  
+      interval: 15s  
+      timeout: 10s  
+      retries: 10  
+  
+  node2:  
+    image: cassandra:latest  
+    container_name: cassandra-node2  
+    volumes:  
+      - cassandra_node2_data:/var/lib/cassandra  
+    environment:  
+      - CASSANDRA_CLUSTER_NAME=TestCluster  
+      - CASSANDRA_SEEDS=node1  
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch  
+      - MAX_HEAP_SIZE=256M  
+      - HEAP_NEWSIZE=64M  
+    depends_on:  
+      node1:  
+        condition: service_healthy  
+  
+volumes:  
+  cassandra_node1_data:  
+  cassandra_node2_data:
+```
+![](images/img120.png)
+![](images/img121.png)
+![](images/img122.png)
+![](images/img123.png)
+![](images/img124.png)
+![](images/img125.png)
