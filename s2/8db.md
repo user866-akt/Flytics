@@ -499,3 +499,63 @@ WHERE a.name = 'Alex'
     WHERE user_id = a.id
   );
 ```
+---
+
+Clickhouse
+
+```yml
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse-lab
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: password
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  postgres:
+    image: postgres:16
+    container_name: postgres-lab
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  clickhouse_data:
+  postgres_data:
+
+```
+![](images/img114.png)
+![](images/img115.png)
+![](images/img116.png)
+![](images/img117.png)
+![](images/img118.png)
+![](images/img119.png)
+1) Clickhouse быстрее вставил данные (~1сек)
+   PostgreSQL ~10сек
+2) ClickHouse обычно сжимает данные в 5-10 раз эффективнее PostgreSQL
+3, 4) ClickHouse лучше для:
+      Аналитических запросов с агрегацией больших объемов данных
+      Систем реального времени и логов
+      Когда важна скорость выполнения OLAP-запросов
+      При ограниченном дисковом пространстве (лучшее сжатие)
+
+PostgreSQL лучше для:
+      Транзакционных систем (OLTP)
+      Когда нужны частые обновления и удаления записей
+      Сложных JOIN-запросов с гарантированной целостностью
+      Приложений с ACID-транзакциями
